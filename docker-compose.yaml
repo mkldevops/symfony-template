@@ -1,8 +1,0 @@
-services:
-  api:
-    container_name: "${PROJECT_NAME}-api"
-    build: .
-    ports:
-      - "8083:80"
-    volumes:
-      - .:/srv/app
