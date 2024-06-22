@@ -7,6 +7,7 @@ use Castor\Attribute\AsTask;
 use Symfony\Component\Finder\Finder;
 use function Castor\run;
 use function Castor\io;
+use function git\commit;
 
 #[AsTask(description: 'Init symfony project')]
 function init(bool $overwrite = false, bool $gitpod = false): void
@@ -17,15 +18,23 @@ function init(bool $overwrite = false, bool $gitpod = false): void
 
     composer();
 
+    commit(message: 'Init project', noRebase: true);
+
     makes();
 
     template($gitpod);
 }
 
-
+#[AsTask(description: 'Apply makes')]
 function makes(): void
 {
-    run(['symfony', 'console', 'make:user', '--is-entity', '--no-interaction', '--with-password', '--with-uuid', '--identity-property-name==email', 'User']);
+    run('git checkout .');
+
+    run(['symfony', 'console', 'make:user', '--is-entity', '--no-interaction', '--with-password', '--with-uuid', '--identity-property-name', 'email', 'User']);
+
+    run(['symfony', 'console', 'make:controller', 'home', '--invokable']);
+
+    run(['symfony', 'console', 'make:security:form-login']);
 }
 
 function template(bool $gitpod): void
@@ -79,6 +88,11 @@ function create(): void
     }
 
     run(['rm', '-rf', 'tmp']);
+
+    file_put_contents('.gitignore', implode(PHP_EOL, [
+        '.idea',
+        '.vscode',
+    ]), FILE_APPEND);
 }
 
 function composer(): void

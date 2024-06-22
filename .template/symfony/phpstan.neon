@@ -1,6 +1,9 @@
 parameters:
     level: 9
     paths:
+        - bin/
+        - config/
+        - public/
         - src
         - tests
 
@@ -13,4 +16,6 @@ parameters:
     excludePaths:
         - src/Kernel.php
 
-    checkGenericClassInNonGenericObjectType: false
+
+    ignoreErrors:
+        -   identifier: missingType.generics

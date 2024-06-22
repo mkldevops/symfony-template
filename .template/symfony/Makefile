@@ -10,7 +10,7 @@ clean: ## reset your symfony project
 	@rm -Rf bin config migrations public src tests translations var vendor .env .env.test .gitignore composer.* symfony.lock phpunit* templates .env.local
 	@echo "PROJECT_NAME=${PROJECT_NAME}" >> .env
 
-docker-install: Dockerfile docker-compose.yaml clean docker-down docker-build docker-up docker-ps docker-logs ## Reset and install your environment
+docker-install: Dockerfile compose.yaml clean docker-down docker-build docker-up docker-ps docker-logs ## Reset and install your environment
 
 docker-up: docker-down ## Start the docker container
 	$(DOCKER) up -d

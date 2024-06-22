@@ -1,13 +1,34 @@
  #syntax=docker/dockerfile:1.4
 
-FROM mkldevops/php-fpm-alpine:8.2
+FROM dunglas/frankenphp:alpine
 
-COPY --link docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-RUN chmod +x /usr/local/bin/docker-entrypoint
-COPY --link docker/app.ini /usr/local/etc/php/conf.d/app.ini
+# add additional extensions here:
+RUN install-php-extensions \
+	pdo_pgsql \
+	gd \
+	intl \
+	zip \
+	opcache
 
-USER www-data
+  RUN apk add --no-cache \
+		acl \
+		file \
+		gettext \
+		git \
+        build-base \
+        zsh \
+        shadow \
+	;
 
-EXPOSE 80
-ENTRYPOINT ["docker-entrypoint"]
-CMD ["symfony", "serve", "--no-tls", "--allow-http", "--port=80"]
+# Symfony cli
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.alpine.sh' | sh && \
+  apk add symfony-cli && \
+  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+WORKDIR /app
+
+COPY . .
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+RUN symfony composer install --no-interaction --no-progress

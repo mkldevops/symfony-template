@@ -7,11 +7,9 @@ use Castor\Attribute\AsTask;
 use function Castor\capture;
 use function Castor\io;
 use function Castor\variable;
-use function quality\analyze;
-use function test\all as testAll;
 use function Castor\run;
 
-#[AsTask(description: 'git commit and push')]
+#[AsTask(description: 'Get git message')]
 function message(): string
 {
     if (capture('gh --version')) {
@@ -36,7 +34,7 @@ function message(): string
 }
 
 #[AsTask(description: 'git commit and push')]
-function commit(?string $message = null, bool $noRebase = false): void
+function commit(?string $message = null, bool $noRebase = false, bool $push = false): void
 {
     io()->title('Committing and pushing');
 
@@ -46,7 +44,9 @@ function commit(?string $message = null, bool $noRebase = false): void
         rebase();
     }
 
-    push();
+    if ($push) {
+        push();
+    }
 }
 
 #[AsTask(description: 'git auto commit')]
@@ -58,14 +58,14 @@ function autoCommit(?string $message = null): void
     run(sprintf('git commit -m "%s"', $message));
 }
 
-#[AsTask(description: 'git commit and push')]
+#[AsTask(description: 'Git rebase')]
 function rebase(): void
 {
     run('git pull --rebase');
     run('git pull --rebase origin ' . variable('GIT_BRANCH', 'main'));
 }
 
-#[AsTask(description: 'git commit and push')]
+#[AsTask(description: 'Git clean')]
 function clean(bool $dryRun = false): void
 {
     run('git fetch --prune');
@@ -86,7 +86,7 @@ function clean(bool $dryRun = false): void
     run(sprintf('%s |  xargs git branch -D', $command));
 }
 
-#[AsTask(description: 'git commit and push')]
+#[AsTask(description: 'Git push')]
 function push(): void
 {
     $currentBranch = capture('git rev-parse --abbrev-ref HEAD');

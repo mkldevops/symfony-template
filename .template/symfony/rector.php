@@ -3,34 +3,52 @@
 declare(strict_types=1);
 
 use Rector\CodeQuality\Rector\Class_\InlineConstructorDefaultToPropertyRector;
-use Rector\CodeQuality\Rector\ClassMethod\ReturnTypeFromStrictScalarReturnExprRector;
+use Rector\CodeQuality\Rector\If_\SimplifyIfReturnBoolRector;
 use Rector\Config\RectorConfig;
-use Rector\Set\ValueObject\LevelSetList;
-use Rector\Set\ValueObject\SetList;
+use Rector\Symfony\Symfony53\Rector\StaticPropertyFetch\KernelTestCaseContainerPropertyDeprecationRector;
+use Rector\Symfony\Symfony62\Rector\MethodCall\SimplifyFormRenderingRector;
+use Rector\TypeDeclaration\Rector\ClassMethod\AddVoidReturnTypeWhereNoReturnRector;
 use Rector\TypeDeclaration\Rector\ClassMethod\ReturnTypeFromStrictNativeCallRector;
+use Rector\TypeDeclaration\Rector\Property\TypedPropertyFromStrictConstructorRector;
 
-return static function (RectorConfig $rectorConfig): void {
-    $rectorConfig->paths([
-        __DIR__ . '/migrations',
+return RectorConfig::configure()
+    ->withPaths([
+        __DIR__ . '/.castor',
+        __DIR__ . '/config',
         __DIR__ . '/public',
         __DIR__ . '/src',
         __DIR__ . '/tests',
-    ]);
-
-    // register a single rule
-    $rectorConfig->rules([
+    ])
+    ->withImportNames(
+        removeUnusedImports: true,
+    )
+    // uncomment to reach your current PHP version
+    ->withPhpSets(
+        php83: true
+    )
+    ->withRules(rules: [
+        AddVoidReturnTypeWhereNoReturnRector::class,
         InlineConstructorDefaultToPropertyRector::class,
         ReturnTypeFromStrictNativeCallRector::class,
-        ReturnTypeFromStrictScalarReturnExprRector::class,
-    ]);
-
-    // define sets of rules
-    $rectorConfig->importNames();
-    $rectorConfig->sets([
-        LevelSetList::UP_TO_PHP_82,
-        SetList::CODE_QUALITY,
-        SetList::DEAD_CODE,
-        SetList::CODING_STYLE,
-        SetList::INSTANCEOF,
-    ]);
-};
+        TypedPropertyFromStrictConstructorRector::class,
+        KernelTestCaseContainerPropertyDeprecationRector::class,
+        SimplifyFormRenderingRector::class,
+        Rector\DeadCode\Rector\Return_\RemoveDeadConditionAboveReturnRector::class,
+        Rector\DeadCode\Rector\For_\RemoveDeadIfForeachForRector::class,
+        Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector::class,
+        Rector\Privatization\Rector\Class_\FinalizeTestCaseClassRector::class,
+    ])
+    ->withSkip([
+        SimplifyIfReturnBoolRector::class,
+    ])
+    ->withAttributesSets(symfony: true, doctrine: true)
+    ->withPreparedSets(
+        deadCode: true,
+        codeQuality: true,
+        codingStyle: true,
+        typeDeclarations: true,
+        privatization: true,
+        instanceOf: true,
+        earlyReturn: true,
+        strictBooleans: true,
+    );
