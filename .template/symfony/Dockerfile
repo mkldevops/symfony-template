@@ -2,6 +2,10 @@
 
 FROM dunglas/frankenphp:alpine
 
+# Disable HTTPS
+ENV SERVER_NAME=:80
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 # add additional extensions here:
 RUN install-php-extensions \
 	pdo_pgsql \
@@ -21,14 +25,13 @@ RUN install-php-extensions \
 	;
 
 # Symfony cli
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.alpine.sh' | sh && \
-  apk add symfony-cli && \
-  sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.alpine.sh' | sh && apk add symfony-cli
+
+# Oh My Zsh
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 WORKDIR /app
 
-COPY . .
-
-ENV COMPOSER_ALLOW_SUPERUSER=1
+COPY --link . /app
 
 RUN symfony composer install --no-interaction --no-progress

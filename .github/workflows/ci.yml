@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request: ~
+  workflow_dispatch: ~
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze & Quality code
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: castor
+
+      - name: Run composer install
+        run: composer install
+
+      - name: Run PHPStan
+        run: |
+          castor symfony:cc --env=test
+          castor quality:phpstan
+
+      - name: Run Cs-Fix
+        run: castor quality:cs-fix --dry-run
+
+      - name: Run rector
+        run: castor quality:rector --dry-run
+
+      - name: Run Symfony lint
+        run: castor quality:lint
+        
