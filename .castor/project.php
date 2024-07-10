@@ -164,22 +164,24 @@ function composer(): void
             ...$packages,
         ],
         quiet: true,
-        callback: fn() => io()->text('Installing....')
+        callback: fn() => io()->write('>')
     );
 
     $require(['stof/doctrine-extensions-bundle']);
 
-    $answer = io()->ask('Do you want to install easy admin ? (y/n)', 'n');
-    if (str_starts_with(strtolower($answer), 'y')) {
+
+    $answer = io()->ask('Do you want to install easy admin ? (y/n,p)', 'n');
+    $permanent = $answer === 'p';
+    if (str_starts_with(strtolower($answer), 'y') || str_starts_with(strtolower($answer), 'p')) {
         $require(['admin']);
     }
 
-    $answer = io()->ask('Do you want to install api platform ? (y/n)', 'n');
+    $answer = $permanent ?: io()->ask('Do you want to install api platform ? (y/n)', 'n');
     if (str_starts_with(strtolower($answer), 'y')) {
         $require(['api', 'webonyx/graphql-php']);
     }
 
-    $answer = io()->ask('Do you want to install phpstan ? (y/n)', 'n');
+    $answer = $permanent ?: io()->ask('Do you want to install phpstan ? (y/n)', 'n');
     if (str_starts_with(strtolower($answer), 'y')) {
         run(['composer', 'config', '--no-plugins', 'allow-plugins.phpstan/extension-installer', 'true'], quiet: true);
         $require(['phpstan/extension-installer',
@@ -192,17 +194,17 @@ function composer(): void
             'phpstan/phpstan-webmozart-assert']);
     }
 
-    $answer = io()->ask('Do you want to install php-cs-fixer ? (y/n)', 'n');
+    $answer = $permanent ?: io()->ask('Do you want to install php-cs-fixer ? (y/n)', 'n');
     if (str_starts_with(strtolower($answer), 'y')) {
         $require(['friendsofphp/php-cs-fixer']);
     }
 
-    $answer = io()->ask('Do you want to install phpunit ? (y/n)', 'n');
+    $answer = $permanent ?: io()->ask('Do you want to install phpunit ? (y/n)', 'n');
     if (str_starts_with(strtolower($answer), 'y')) {
         $require(['phpunit/phpunit', 'dama/doctrine-test-bundle', 'doctrine/doctrine-fixtures-bundle', 'fakerphp/faker']);
     }
 
-    $answer = io()->ask('Do you want to install rector ? (y/n)', 'n');
+    $answer = $permanent ?: io()->ask('Do you want to install rector ? (y/n)', 'n');
     if (str_starts_with(strtolower($answer), 'y')) {
         $require(['rector/rector']);
     }
