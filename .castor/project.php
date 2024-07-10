@@ -4,14 +4,14 @@ namespace project;
 
 use Castor\Attribute\AsTask;
 use Symfony\Component\Finder\Finder;
-
 use Symfony\Component\Process\Process;
+
 use function Castor\io;
 use function Castor\run;
 use function git\commit;
 
 #[AsTask(description: 'Init symfony project')]
-function init(bool $overwrite = false, bool $gitpod = false): void
+function init(bool $overwrite = false, bool $gitpod = false, bool $commit = false): void
 {
     clean($overwrite);
 
@@ -19,7 +19,9 @@ function init(bool $overwrite = false, bool $gitpod = false): void
 
     composer();
 
-    commit(message: 'Init project', noRebase: true);
+    if ($commit) {
+        commit(message: 'Init project', noRebase: true);
+    }
 
     makes();
 
@@ -36,15 +38,24 @@ function makes(): void
     run('git checkout .');
 
     if (!file_exists(getWorkDir() . '/src/Entity/User.php')) {
-        run(['symfony', 'console', 'make:user', '--is-entity', '--no-interaction', '--with-password', '--with-uuid', '--identity-property-name', 'email', 'User']);
+        $answer = io()->ask('Do you want to create a user entity ? (y/n)', 'n');
+        if (str_starts_with(strtolower($answer), 'y')) {
+            run(['symfony', 'console', 'make:user', '--is-entity', '--no-interaction', '--with-password', '--with-uuid', '--identity-property-name', 'email', 'User']);
+        }
     }
 
     if (!file_exists(getWorkDir() . '/src/Controller/HomeController.php')) {
-        run(['symfony', 'console', 'make:controller', 'home', '--invokable']);
+        $answer = io()->ask('Do you want to create a home controller ? (y/n)', 'n');
+        if (str_starts_with(strtolower($answer), 'y')) {
+            run(['symfony', 'console', 'make:controller', 'home', '--invokable']);
+        }
     }
 
     if (!file_exists(getWorkDir() . '/src/Controller/SecurityController.php')) {
-        run(['symfony', 'console', 'make:security:form-login']);
+        $answer = io()->ask('Do you want to create a form login ? (y/n)', 'n');
+        if (str_starts_with(strtolower($answer), 'y')) {
+            run(['symfony', 'console', 'make:security:form-login']);
+        }
     }
 }
 
@@ -90,22 +101,31 @@ function clean(bool $overwrite = true): void
         ->in(getWorkDir())
         ->depth(0)
         ->ignoreDotFiles(false)
-        ->exclude(['.castor', '.git', '.github', '.template',])
-        ->notContains(['README.md', 'Makefile']);
+        ->exclude(['.castor', '.git', '.github', '.template']);
 
-    if ($finder->hasResults()) {
-        io()->error('Project already initialized');
-        io()->title('Cleaning project...');
-        if (!$overwrite) {
-            $result = io()->ask('Do you want to continue ? (y/n)', 'n');
-            if (!str_starts_with(strtolower($result), 'y')) {
-                return;
-            }
+    if (!$finder->hasResults()) {
+        io()->text('Project not initialized ' . getWorkDir());
+        return;
+    }
+
+    io()->error('Project already initialized');
+    io()->title('Cleaning project...');
+
+    if (!$overwrite) {
+        $result = io()->ask('Do you want to continue ? (y/n)', 'n');
+        if (!str_starts_with(strtolower($result), 'y')) {
+            exit();
+        }
+    }
+
+    foreach ($finder as $item) {
+        if (str_contains($item->getRealPath(), 'Makefile')
+            || str_contains($item->getRealPath(), 'README.md')) {
+            continue;
         }
 
-        foreach ($finder as $item) {
-            run(['rm', '-rf', $item->getRealPath()]);
-        }
+        io()->text('Removing ' . $item->getRealPath());
+        run(['rm', '-rf', $item->getRealPath()]);
     }
 }
 
@@ -141,9 +161,10 @@ function composer(): void
         command: [
             ...['symfony', 'composer', 'require', '-n', '-W', '--no-progress'],
             ...$dev ? ['--dev'] : [],
-            ...$packages
+            ...$packages,
         ],
-        quiet: true
+        quiet: true,
+        callback: fn() => io()->text('Installing....')
     );
 
     $require(['stof/doctrine-extensions-bundle']);
