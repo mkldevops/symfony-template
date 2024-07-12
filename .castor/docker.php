@@ -31,15 +31,15 @@ function sh(): void
 
 function isContainerRunning(): bool
 {
-    return cache('docker-is-running', static function (CacheItemInterface $item) : bool {
+    return cache('docker-is-running', static function (CacheItemInterface $item): bool {
         $item->expiresAfter(20);
-        return (bool) capture('docker compose ps --status=running --services | grep php && echo 1 || echo 0');
+        return (bool)capture('docker compose ps --status=running --services | grep php && echo 1 || echo 0');
     });
 }
 
-function isContainerHealthy() : bool
+function isContainerHealthy(): bool
 {
-    return cache('docker-is-healthy', static function (CacheItemInterface $item) : bool {
+    return cache('docker-is-healthy', static function (CacheItemInterface $item): bool {
         $item->expiresAfter(20);
         if (isContainerRunning()) {
             return true;
@@ -52,7 +52,7 @@ function isContainerHealthy() : bool
 }
 
 #[AsTask(description: 'Execute docker exec command')]
-function exec(string $cmd, string $service = 'php', string $env = 'dev', bool $silent = false): Process
+function exec(string $cmd, string $service = 'web', string $env = 'dev', bool $silent = false): Process
 {
     $environment = ['APP_ENV' => $env];
     if (!isContainerRunning()) {
@@ -62,7 +62,7 @@ function exec(string $cmd, string $service = 'php', string $env = 'dev', bool $s
 
     array_walk(
         array: $environment,
-        callback: static fn(string &$value, string $key) : string => $value = sprintf('-e %s=%s', $key, $value),
+        callback: static fn(string &$value, string $key): string => $value = sprintf('-e %s=%s', $key, $value),
     );
 
     return run(
@@ -89,7 +89,7 @@ function up(bool $restart = false, bool $build = false, bool $removeVolumes = fa
             'docker compose up -d --wait --remove-orphans  %s',
             $build ? '--build' : ''
         ),
-        environment: ['SERVER_NAME' => variable('SERVER_NAME', dirname(__DIR__).'.localhost')],
+        environment: ['SERVER_NAME' => variable('SERVER_NAME', dirname(__DIR__) . '.localhost')],
         allowFailure: true
     );
 
@@ -103,7 +103,7 @@ function down(bool $removeVolumes = false): void
 {
     io()->title('Stopping project');
 
-    run('docker compose down --remove-orphans '.($removeVolumes ? '--volumes' : ''));
+    run('docker compose down --remove-orphans ' . ($removeVolumes ? '--volumes' : ''));
 }
 
 #[AsTask(description: 'Execute docker push command')]
@@ -117,7 +117,7 @@ function push(string $target, ?string $tag = null): Process
     }
 
     // docker build with target
-    $build = run('docker build --target '.$target.' -t $DOCKER_IMAGE_NAME:'.$tag.' .');
+    $build = run('docker build --target ' . $target . ' -t $DOCKER_IMAGE_NAME:' . $tag . ' .');
 
     if (!$build->isSuccessful()) {
         io()->error('Build failed');
@@ -125,7 +125,7 @@ function push(string $target, ?string $tag = null): Process
         return $build;
     }
 
-    $result = run('docker push $DOCKER_IMAGE_NAME:'.$tag);
+    $result = run('docker push $DOCKER_IMAGE_NAME:' . $tag);
 
     if ($result->isSuccessful()) {
         io()->success('Push executed successfully');
